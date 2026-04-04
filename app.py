@@ -427,6 +427,11 @@ with mapping_tab:
     with capture_right:
         st.markdown("### Capture source")
         capture_source = st.selectbox("Use data from", ["Current dataset", "Fresh live scan", "Selected demo snapshot"])
+        if st.button("Clear saved survey points", use_container_width=True):
+            storage.clear_mapping_points()
+            st.session_state.current_mapping_df = active_mapping_df(st.session_state.current_mode)
+            st.success("Saved survey points cleared.")
+            st.rerun()
         if st.button("Capture measurement point", use_container_width=True):
             if capture_source == "Fresh live scan":
                 result = scanner.scan()
@@ -437,8 +442,8 @@ with mapping_tab:
                     st.error(result.message)
                     if result.stderr:
                         st.caption(result.stderr)
-                    records_to_save = load_demo_scan_records(selected_demo_snapshot)
-                    st.info("Live capture failed, so this point was saved with the selected demo dataset instead.")
+                    records_to_save = []
+                    st.error("Live capture failed. No survey point was saved.")
             elif capture_source == "Selected demo snapshot":
                 records_to_save = load_demo_scan_records(selected_demo_snapshot)
             else:

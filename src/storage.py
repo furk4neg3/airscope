@@ -17,6 +17,10 @@ class StorageManager:
         self.db_path = str(db_path)
         self.init_db()
 
+    def clear_mapping_points(self) -> None:
+        with self.connect() as conn:
+            conn.execute("DELETE FROM mapping_points")
+
     @contextmanager
     def connect(self):
         conn = sqlite3.connect(self.db_path)
