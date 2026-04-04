@@ -1,87 +1,115 @@
-# Secure Wi-Fi Signal Strength Mapping and Rogue AP Detection Tool
+# AirScope
 
-A polished Streamlit application for **authorized, defensive Wi-Fi assessment**. The tool passively scans nearby access points when live scan backends are available, normalizes Wi-Fi metadata into a common schema, maps signal strength across a surveyed area, flags risky or suspicious patterns, scores security and coverage, and exports concise reports.
+**AirScope** is a Streamlit-based Python application for **passive, defensive Wi-Fi assessment**. It helps you inspect nearby access points, map signal strength across a surveyed space, flag risky or suspicious wireless patterns, score security and coverage, and export short assessment reports.
 
-> Scope boundary: this project is **passive and defensive only**. It does **not** perform credential capture, deauthentication, packet injection, cracking, exploitation, or offensive actions.
-
----
-
-## What the project does
-
-The app helps you:
-
-- scan nearby Wi-Fi access points
-- inspect SSIDs, BSSIDs, channels, bands, signal, and security types
-- detect open or legacy-encrypted networks
-- flag suspicious duplicate SSIDs and possible rogue / evil twin behavior
-- record survey measurements on an X/Y grid or floor-plan-backed view
-- generate interpolated signal heatmaps
-- identify weak zones and dead zones
-- compute explainable **security**, **coverage**, and **overall** scores
-- generate short, actionable recommendations
-- export CSV and Markdown/HTML reports
+> Scope boundary: AirScope is **passive and defensive only**. It does **not** perform credential capture, deauthentication, packet injection, cracking, exploitation, or any other offensive action.
 
 ---
 
-## Features
+## What AirScope does
 
-### Dashboard / Overview
+AirScope lets you:
+
+- run a **live passive Wi-Fi scan** when a supported local backend is available
+- inspect **SSID, BSSID, signal, channel, band, frequency, and security** values in a normalized table
+- flag **open networks**, **weak encryption**, **duplicate SSIDs**, **security mismatches**, **signal spikes**, and **other anomaly-based findings**
+- save scan snapshots to a local **SQLite** database
+- capture survey points on an **X/Y grid** for coverage analysis
+- generate **signal heatmaps** or scatter fallback views when there are too few points to interpolate
+- identify **weak** and **dead-zone** areas using configurable thresholds
+- compute **security**, **coverage**, and **overall** scores
+- generate **recommendations** based on the current scan and mapping data
+- export **CSV**, **Markdown**, and **HTML** reports
+
+---
+
+## Current feature set
+
+### Overview tab
 - total AP count
-- suspicious finding count
+- suspicious findings count
 - open / weak network count
 - average signal strength
 - security score
 - coverage score
+- security inventory chart
 - channel congestion chart
-- security distribution chart
+- overall score chart
 
-### Live Scan
-- Windows backend via `netsh`
-- Linux backend via `nmcli`, with `iw` fallback
-- macOS backend via `CoreWLAN` (preferred), `airport`, and `system_profiler`
-- automatic OS / backend detection
-- normalized scan table
-- filtering by SSID, band, security, suspicious-only
-- snapshot saving with timestamps
+### Live Scan tab
+- passive scan workflow
+- normalized AP table
+- filters by **SSID**, **band**, **security**, and **suspicious-only**
+- backend-aware status messages
+- demo fallback when live scanning cannot collect usable AP data
 
-### Signal Mapping
-- manual X/Y survey point workflow
+### Signal Mapping tab
+- manual X/Y survey point capture
 - optional uploaded floor plan background
-- bundled sample floor plan for instant demos
+- bundled sample floor plan
 - capture points from:
   - current dataset
   - fresh live scan
-  - bundled demo snapshot
-- interpolated heatmaps using SciPy `griddata`
-- scatter fallback when there are too few points
-- weak / dead-zone highlighting through thresholds
+  - selected demo snapshot
+- interpolated heatmap view
+- scatter fallback when interpolation is not possible
+- configurable thresholds for excellent / good / fair / weak coverage
 
-### Rogue AP Detection
+### Rogue AP Detection tab
+- open network detection
+- weak encryption detection
 - duplicate SSID detection
-- security mismatch detection within the same SSID
-- strong signal spike detection within duplicate SSID groups
-- anomaly detection using **Isolation Forest**
-- clustering using **DBSCAN**
-- plain-language explanations with confidence levels
+- security mismatch / possible rogue detection
+- signal spike / possible evil twin detection
+- unexpected channel / band checks
+- historical profile drift checks when saved data exists
+- DBSCAN clustering and Isolation Forest anomaly analysis
 
-### Recommendations Engine
-- AP placement hints
-- encryption hardening advice
-- channel congestion reduction suggestions
-- suspicious SSID verification suggestions
-- baseline inventory guidance
+### Recommendations tab
+- prioritized recommendations
+- rationale for each recommendation
+- score breakdown chart for explainable scoring inputs
+
+### Reports / Export tab
+- scan CSV download
+- findings CSV download
+- mapping CSV download
+- Markdown report download
+- HTML report download
+- save Markdown + HTML into `reports/`
+- in-app Markdown preview
 
 ### Persistence
-- SQLite database for:
-  - saved scan snapshots
-  - mapping points
-  - stored findings
+AirScope stores data locally in SQLite for:
+- saved scan snapshots
+- mapping points
+- stored findings
 
-### Demo Mode
-- bundled realistic sample scan data
-- bundled realistic mapping points
-- bundled floor-plan image
-- app remains fully usable even when live scan is unavailable
+### Demo mode
+The app includes bundled demo data so the interface remains usable even if live scanning is unavailable on the host system.
+
+---
+
+## Live scan backends
+
+AirScope uses best-effort passive Wi-Fi scanning based on the current OS.
+
+### Windows
+- `netsh wlan show networks mode=bssid`
+
+### Linux
+- `nmcli` (preferred)
+- `iw` fallback
+
+### macOS
+- **CoreWLAN via PyObjC** (preferred)
+- Apple `airport` utility fallback
+- `system_profiler SPAirPortDataType` final fallback
+
+### Important macOS note
+Recent macOS builds may still expose the `airport` binary while returning **no usable scan rows**. In that case, AirScope can detect the backend but still be unable to collect AP data. The app then shows a scan error and switches back to demo data so the rest of the workflow still works.
+
+CoreWLAN also depends on macOS privacy permissions. If scan metadata is incomplete, enable **Location Services** for the Python host / Terminal app and restart Streamlit from a fresh terminal window.
 
 ---
 
@@ -90,11 +118,11 @@ The app helps you:
 ```text
 app.py                     Streamlit UI and orchestration
 src/scanner.py             OS/backend detection and passive Wi-Fi scanning
-src/parsers.py             Parsing for netsh, nmcli, iw, airport outputs
-src/models.py              Dataclasses for AP records, mapping points, findings
+src/parsers.py             Parsing and normalization for supported scan outputs
+src/models.py              Dataclasses for AP records, mapping points, and findings
 src/storage.py             SQLite persistence layer
-src/analyzer.py            Heuristics, clustering, anomaly detection
-src/heatmap.py             Interpolation, heatmap generation, weak-zone logic
+src/analyzer.py            Heuristics, clustering, anomaly detection, and findings
+src/heatmap.py             Interpolation, visualization, and weak-zone logic
 src/scoring.py             Security / coverage / overall scoring
 src/recommendations.py     Recommendation engine
 src/demo_data.py           Bundled demo loaders
@@ -107,7 +135,7 @@ src/utils.py               Shared helpers and normalization utilities
 ## Project structure
 
 ```text
-Secure-WiFi-Signal-Mapping-Tool/
+airscope/
 ├── app.py
 ├── README.md
 ├── requirements.txt
@@ -116,7 +144,7 @@ Secure-WiFi-Signal-Mapping-Tool/
 ├── data/
 │   ├── sample_mapping_points.csv
 │   ├── sample_scans.csv
-│   └── wifi_assessment.db
+│   └── wifi_assessment.db        # created automatically on first run
 ├── reports/
 ├── src/
 │   ├── __init__.py
@@ -132,22 +160,20 @@ Secure-WiFi-Signal-Mapping-Tool/
 │   ├── storage.py
 │   └── utils.py
 └── tests/
+    ├── conftest.py
     └── test_core.py
 ```
 
-> `wifi_assessment.db` is created automatically on first run if it does not already exist.
-
 ---
 
-## Prerequisites
+## Requirements
 
 - Python **3.11+**
-- A local machine with Wi-Fi hardware if you want live scanning
-- On Linux, one of:
-  - `nmcli` (NetworkManager)
-  - `iw`
-- On macOS, PyObjC/CoreWLAN first, then Apple’s `airport` utility if available
-- On Windows, `netsh` (normally included)
+- a local machine with Wi-Fi hardware for live scanning
+- Streamlit-compatible desktop/browser environment
+- for Linux live scan: `nmcli` or `iw`
+- for macOS live scan: PyObjC / CoreWLAN support is preferred; `airport` and `system_profiler` are fallback paths
+- for Windows live scan: `netsh`
 
 ---
 
@@ -172,144 +198,60 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 3) Run the app
+### 3) Run AirScope
 ```bash
 streamlit run app.py
 ```
 
-Open the local URL shown by Streamlit in your browser.
+Open the local Streamlit URL shown in the terminal.
 
 ---
 
-## How to use the app
+## How to use AirScope
 
 ### Demo Mode
-Demo Mode works immediately with no hardware requirements.
+Demo Mode works immediately and does not require working Wi-Fi scan backends.
 
-1. Start the app with:
+1. Start the app:
    ```bash
    streamlit run app.py
    ```
 2. In the sidebar, keep **Data source = Demo Mode**
 3. Choose a bundled demo snapshot
-4. Review the Overview, Rogue AP Detection, Recommendations, and Reports tabs
-5. Open the Signal Mapping tab to view the bundled coverage survey and heatmap
+4. Click **Load selected demo snapshot**
+5. Review the **Overview**, **Rogue AP Detection**, **Recommendations**, and **Reports / Export** tabs
+6. Open **Signal Mapping** to inspect the bundled coverage workflow
 
 ### Live Scan Mode
-1. Start the app
-2. In the sidebar, switch to **Live Scan**
+1. Start the app locally on the host machine
+2. In the sidebar, switch **Data source** to **Live Scan**
 3. Click **Run live scan now**
-4. If scanning works, results appear in the Live Scan tab and update the rest of the app
-5. Save the snapshot if you want persistence across app restarts
+4. If a supported backend returns usable AP data, the active dataset updates across the app
+5. Save the snapshot if you want to keep it in SQLite
 
-If live scanning fails, the app will:
-- explain the failure
-- show the backend stderr when available
-- automatically switch to Demo Mode so the workflow remains usable
+If live scanning fails, AirScope:
+- shows the failure message
+- displays backend stderr when available
+- loads the selected demo snapshot so the rest of the workflow remains usable
 
-### Survey / Signal Mapping workflow
-1. Go to **Signal Mapping**
+### Signal Mapping workflow
+1. Open **Signal Mapping**
 2. Set the survey width and height
 3. Optionally upload a floor plan or use the bundled sample floor plan
-4. Enter an `(x, y)` point and a label
-5. Choose capture source:
-   - current dataset
-   - fresh live scan
-   - selected demo snapshot
+4. Add an `(x, y)` point and label
+5. Choose the capture source:
+   - **Current dataset**
+   - **Fresh live scan**
+   - **Selected demo snapshot**
 6. Click **Capture measurement point**
-7. Pick an SSID to visualize
-8. Review the heatmap and weak/dead-zone metrics
+7. Pick the **SSID to plot**
+8. Review the map, weak/dead-zone metrics, and the stored per-point scan rows
 
-### Save and export
-- Save scan snapshots from the sidebar
-- Export scan, findings, and mapping data as CSV in the Reports / Export tab
-- Download Markdown or HTML summaries
-- Save reports directly into the `reports/` folder
-
----
-
-## Live scan notes by OS
-
-### Windows
-Backend used:
-- `netsh wlan show networks mode=bssid`
-
-Requirements / notes:
-- Wi-Fi must be enabled
-- a WLAN adapter must be present
-- some managed or virtualized environments may expose no scan results
-
-### Linux
-Preferred backends:
-- `nmcli`
-- `iw dev <iface> scan` fallback
-
-Requirements / notes:
-- `nmcli` usually works best on desktops/laptops using NetworkManager
-- `iw` may require additional permissions on some distributions
-- results inside VMs often fail or reflect no real wireless adapter
-
-### macOS
-Backend used:
-- `airport -s`
-
-Requirements / notes:
-- the airport utility path is checked automatically
-- some managed systems or newer OS builds may restrict or hide the command
-
----
-
-## Data model
-
-Each AP is normalized into a schema that may include:
-- `ssid`
-- `bssid`
-- `signal_dbm`
-- `signal_percent`
-- `channel`
-- `band`
-- `security`
-- `timestamp`
-- `backend`
-- `frequency_mhz` when available
-
-Different OS outputs are normalized into this internal model before analysis.
-
----
-
-## Scoring model
-
-### Security score (0–100)
-Penalizes:
-- open networks
-- WEP
-- WPA / unknown / legacy security
-- duplicate SSIDs with mismatched security
-- suspicious rogue-like signal spikes
-- ML anomalies
-
-### Coverage score (0–100)
-Uses:
-- mean signal strength
-- fraction of weak points
-- fraction of dead-zone points
-- channel congestion estimate
-
-### Overall score
-Weighted combination:
-- 55% security
-- 45% coverage
-
----
-
-## Data science components
-
-This project includes real analysis, not dummy labels:
-
-- **Isolation Forest** for AP anomaly detection
-- **DBSCAN** for pattern clustering
-- **SciPy griddata** for signal interpolation
-- explainable scoring model for risk and coverage
+### Reports and export
+Use **Reports / Export** to:
+- download scan, findings, and mapping CSV files
+- download Markdown and HTML reports
+- save both report formats into the local `reports/` directory
 
 ---
 
@@ -319,102 +261,32 @@ This project includes real analysis, not dummy labels:
 pytest -q
 ```
 
----
-
-## Troubleshooting
-
-### Live scan says no backend found
-Cause:
-- required OS command is missing
-- the environment is unsupported
-
-What to do:
-- use Demo Mode immediately
-- on Linux, install NetworkManager / nmcli or ensure `iw` is present
-- on macOS, verify the airport utility exists
-
-### Live scan returns empty results
-Cause:
-- Wi-Fi disabled
-- unsupported adapter
-- insufficient permissions
-- VM / remote session limitations
-
-What to do:
-- confirm the machine has an active Wi-Fi interface
-- retry outside the VM if possible
-- use Demo Mode for the rest of the workflow
-
-### Floor-plan upload does not render for SVG
-Cause:
-- local Pillow build may not decode SVG directly
-
-What to do:
-- use PNG/JPG uploads for maximum compatibility
-- or use the bundled sample floor plan
-
-### Heatmap falls back to scatter mode
-Cause:
-- too few unique survey points
-
-What to do:
-- capture at least four unique `(x, y)` points
-- distribute measurements across the area instead of only along one edge
-
-### Coverage score seems low even with a decent scan
-Cause:
-- saved mapping points may contain weak/dead zones
-- crowded channels can reduce the coverage score
-
-What to do:
-- review the Signal Mapping and Overview tabs together
-- verify thresholds match your environment
+The current project state passes the included test suite.
 
 ---
 
-## Limitations
+## Known limitations
 
-- live scanning depends on platform utilities and local permissions
-- 6 GHz identification depends on frequency visibility from the backend
-- channel heuristics are intentionally conservative to reduce false positives
-- signal mapping is based on sampled points, not a physical RF propagation model
-- the rogue / evil twin detection is **heuristic and probabilistic**, not proof of compromise
-
----
-
-## Future improvements
-
-- historical drift dashboard across many saved snapshots
-- trusted SSID/BSSID baseline management UI
-- authenticated multi-user persistence
-- richer PDF report generation
-- optional floor-plan calibration using image click-to-coordinate mapping
-- stronger channel planning logic per regulatory domain
+- Live scanning is **best effort** and depends on OS support, local hardware, permissions, and backend output format.
+- A detected backend is not always a usable backend. For example, on some recent macOS builds, `airport` exists but returns only a deprecation warning and no AP rows.
+- `system_profiler` can act as a macOS fallback, but it may omit RSSI for neighboring networks, which reduces mapping accuracy.
+- Virtual machines, remote sessions, containers, and some managed systems often do not expose real Wi-Fi hardware to the app.
+- Signal mapping quality depends on the number and spread of saved survey points.
 
 ---
 
-## Exact quick-start commands
+## Safety and intended use
 
-### Windows (PowerShell)
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-streamlit run app.py
-```
+AirScope is intended for:
+- authorized wireless assessments
+- lab environments
+- home or enterprise Wi-Fi visibility
+- defensive analysis and reporting
 
-### macOS / Linux
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-streamlit run app.py
-```
+It is **not** intended for offensive wireless operations.
 
-On macOS, `pip install -r requirements.txt` also installs the PyObjC bindings used for CoreWLAN and CoreLocation.
+---
 
+## Suggested repository description
 
-
-## macOS airport note
-
-On macOS Sonoma 14.4 and later, `airport -s` can return only a deprecation warning instead of nearby networks. This project now prefers `CoreWLAN` via PyObjC for live scans because it can return RSSI values for nearby networks, then falls back to `airport`, and finally to `system_profiler SPAirPortDataType`. `system_profiler` is a limited fallback and often omits RSSI for unconnected networks. If CoreWLAN shows hidden or incomplete metadata, enable Location Services for the Python interpreter or terminal host app, then restart Streamlit from a new terminal window.
+**AirScope is a Streamlit-based Python tool for passive Wi-Fi assessment, signal mapping, rogue AP detection, security/coverage scoring, and report export.**
