@@ -55,11 +55,22 @@ CSS = """
         border: 1px solid #bfdbfe;
     }
     .card {
-        border: 1px solid #e5e7eb;
-        border-radius: 18px;
-        padding: 1rem 1rem 0.85rem;
-        background: white;
-        box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
+    border: 1px solid #334155;
+    border-radius: 18px;
+    padding: 1rem 1rem 0.85rem;
+    background: #1e293b;
+    color: #f8fafc;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.20);
+    }
+    .card strong {
+        color: #ffffff;
+    }
+    .card span {
+        color: #e2e8f0;
+    }
+    .small-muted {
+        color: #cbd5e1;
+        font-size: 0.95rem;
     }
 </style>
 """
