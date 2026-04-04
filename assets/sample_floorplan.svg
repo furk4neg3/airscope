@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="800" viewBox="0 0 1000 800">
+  <rect width="1000" height="800" fill="#f8fafc"/>
+  <rect x="40" y="40" width="920" height="720" rx="16" fill="white" stroke="#334155" stroke-width="6"/>
+  <line x1="360" y1="40" x2="360" y2="500" stroke="#94a3b8" stroke-width="8"/>
+  <line x1="680" y1="40" x2="680" y2="760" stroke="#94a3b8" stroke-width="8"/>
+  <line x1="40" y1="280" x2="360" y2="280" stroke="#94a3b8" stroke-width="8"/>
+  <line x1="360" y1="500" x2="680" y2="500" stroke="#94a3b8" stroke-width="8"/>
+  <line x1="680" y1="320" x2="960" y2="320" stroke="#94a3b8" stroke-width="8"/>
+  <rect x="140" y="520" width="120" height="80" fill="#e2e8f0" stroke="#64748b"/>
+  <rect x="460" y="150" width="120" height="80" fill="#e2e8f0" stroke="#64748b"/>
+  <rect x="760" y="560" width="120" height="80" fill="#e2e8f0" stroke="#64748b"/>
+  <text x="110" y="120" font-size="36" fill="#0f172a" font-family="Arial">Open Office</text>
+  <text x="440" y="120" font-size="32" fill="#0f172a" font-family="Arial">Conference Room</text>
+  <text x="730" y="120" font-size="32" fill="#0f172a" font-family="Arial">Lab</text>
+  <text x="95" y="360" font-size="32" fill="#0f172a" font-family="Arial">Reception</text>
+  <text x="430" y="610" font-size="32" fill="#0f172a" font-family="Arial">Storage</text>
+  <text x="740" y="430" font-size="32" fill="#0f172a" font-family="Arial">Warehouse</text>
+</svg>
