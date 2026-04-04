@@ -284,9 +284,3 @@ AirScope is intended for:
 - defensive analysis and reporting
 
 It is **not** intended for offensive wireless operations.
-
----
-
-## Suggested repository description
-
-**AirScope is a Streamlit-based Python tool for passive Wi-Fi assessment, signal mapping, rogue AP detection, security/coverage scoring, and report export.**
