@@ -188,11 +188,8 @@ scanner = get_scanner()
 storage = get_storage()
 
 st.markdown(
-    """
-<div class="hero">
-    <h1>Secure Wi-Fi Signal Strength Mapping and Rogue AP Detection Tool</h1>
-    <p>Passive, defensive Wi-Fi assessment with live scanning, signal heatmaps, anomaly detection, scoring, and exportable reports.</p>
-</div>
+    """<br>
+    <br>
 """,
     unsafe_allow_html=True,
 )
