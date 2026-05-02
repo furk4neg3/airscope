@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import datetime
 import base64
 from pathlib import Path
@@ -424,6 +425,14 @@ with mapping_tab:
     with capture_right:
         st.markdown("### Capture source")
         capture_source = st.selectbox("Use data from", ["Current dataset", "Fresh live scan", "Selected demo snapshot"])
+        sample_count = st.number_input(
+            "Samples per point (Fresh live scan)",
+            min_value=1,
+            max_value=10,
+            value=3,
+            step=1,
+            help="Number of consecutive live scans to average per AP. Only used with 'Fresh live scan'.",
+        )
         if st.button("Clear saved survey points", use_container_width=True):
             storage.clear_mapping_points()
             st.session_state.current_mapping_df = active_mapping_df(st.session_state.current_mode)
@@ -431,15 +440,58 @@ with mapping_tab:
             st.rerun()
         if st.button("Capture measurement point", use_container_width=True):
             if capture_source == "Fresh live scan":
-                result = scanner.scan()
-                if result.success:
-                    records_to_save = result.records
-                    st.success(f"Captured {len(records_to_save)} APs for point {point_label}.")
-                else:
-                    st.error(result.message)
-                    if result.stderr:
-                        st.caption(result.stderr)
+                samples: list[list] = []
+                last_error: str | None = None
+                last_stderr: str | None = None
+                progress = st.progress(0.0, text="Running live scans...")
+                for i in range(int(sample_count)):
+                    result = scanner.scan()
+                    if result.success:
+                        samples.append(result.records)
+                    else:
+                        last_error = result.message
+                        last_stderr = result.stderr
+                    progress.progress((i + 1) / int(sample_count), text=f"Scan {i + 1}/{int(sample_count)} complete")
+                progress.empty()
+
+                if samples:
+                    aggregated: dict[str, dict] = {}
+                    for records in samples:
+                        for rec in records:
+                            entry = aggregated.setdefault(
+                                rec.bssid,
+                                {"record": rec, "dbm": [], "percent": []},
+                            )
+                            if rec.signal_dbm is not None:
+                                entry["dbm"].append(rec.signal_dbm)
+                            if rec.signal_percent is not None:
+                                entry["percent"].append(rec.signal_percent)
+                            # Keep the most recent record as template
+                            entry["record"] = rec
+
                     records_to_save = []
+                    for entry in aggregated.values():
+                        base = entry["record"]
+                        avg_dbm = sum(entry["dbm"]) / len(entry["dbm"]) if entry["dbm"] else None
+                        avg_pct = sum(entry["percent"]) / len(entry["percent"]) if entry["percent"] else None
+                        averaged = replace(
+                            base,
+                            signal_dbm=round(avg_dbm, 2) if avg_dbm is not None else None,
+                            signal_percent=round(avg_pct, 2) if avg_pct is not None else None,
+                        )
+                        records_to_save.append(averaged)
+                    st.success(
+                        f"Captured {len(records_to_save)} APs for point {point_label} "
+                        f"(averaged across {len(samples)}/{int(sample_count)} successful scans)."
+                    )
+                    if last_error and len(samples) < int(sample_count):
+                        st.warning(f"Some scans failed: {last_error}")
+                else:
+                    records_to_save = []
+                    if last_error:
+                        st.error(last_error)
+                    if last_stderr:
+                        st.caption(last_stderr)
                     st.error("Live capture failed. No survey point was saved.")
             elif capture_source == "Selected demo snapshot":
                 records_to_save = load_demo_scan_records(selected_demo_snapshot)
