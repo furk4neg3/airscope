@@ -138,12 +138,12 @@ def historical_context(mode: str, current_snapshot_id: int | None) -> pd.DataFra
 
 
 def active_mapping_df(mode: str) -> pd.DataFrame:
-    stored = get_storage().load_mapping_points()
     if mode == "demo":
-        if stored.empty:
-            return load_demo_mapping_df()
-        return pd.concat([load_demo_mapping_df(), stored], ignore_index=True)
-    return stored
+        # Demo mode shows only the bundled demo points so the demonstration
+        # is reproducible and not contaminated by real survey data the user
+        # may have captured in previous live sessions.
+        return load_demo_mapping_df()
+    return get_storage().load_mapping_points()
 
 
 def set_current_scan(
