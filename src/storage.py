@@ -147,16 +147,8 @@ class StorageManager:
                 conn,
             )
 
-    def load_scan_records(self, snapshot_id: int | None = None) -> pd.DataFrame:
+    def load_scan_records(self, snapshot_id: int) -> pd.DataFrame:
         with self.connect() as conn:
-            if snapshot_id is None:
-                query = """
-                    SELECT r.*, s.snapshot_name, s.captured_at, s.mode
-                    FROM scan_records r
-                    JOIN scan_snapshots s ON s.id = r.snapshot_id
-                    WHERE r.snapshot_id = (SELECT id FROM scan_snapshots ORDER BY id DESC LIMIT 1)
-                """
-                return pd.read_sql_query(query, conn)
             return pd.read_sql_query(
                 """
                 SELECT r.*, s.snapshot_name, s.captured_at, s.mode
