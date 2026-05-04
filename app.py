@@ -304,7 +304,7 @@ recommendations_df = st.session_state.current_recommendations_df.copy()
 overview_tab, scan_tab, mapping_tab, rogue_tab, recommendations_tab, reports_tab = st.tabs(
     [
         "Overview",
-        "Live Scan",
+        "Visible APs",
         "Signal Mapping",
         "Rogue AP Detection",
         "Recommendations",
