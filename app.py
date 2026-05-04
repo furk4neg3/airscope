@@ -153,18 +153,25 @@ def set_current_scan(
     source_label: str,
     snapshot_id: int | None = None,
 ) -> None:
-    analysis = analyze_scan(records, history_df=historical_context(mode, snapshot_id))
-    scan_df = analysis["df"]
-    mapping_df = active_mapping_df(mode)
-    security_score, security_breakdown = calculate_security_score(scan_df, analysis["findings_df"])
-    coverage_score, coverage_breakdown = calculate_coverage_score(scan_df, mapping_df)
-    overall_score = calculate_overall_score(security_score, coverage_score)
-    scores = {
-        "security_score": security_score,
-        "coverage_score": coverage_score,
-        "overall_score": overall_score,
-    }
-    recommendations_df = build_recommendations(scan_df, analysis["findings_df"], mapping_df, scores)
+    try:
+        analysis = analyze_scan(records, history_df=historical_context(mode, snapshot_id))
+        scan_df = analysis["df"]
+        mapping_df = active_mapping_df(mode)
+        security_score, security_breakdown = calculate_security_score(scan_df, analysis["findings_df"])
+        coverage_score, coverage_breakdown = calculate_coverage_score(scan_df, mapping_df)
+        overall_score = calculate_overall_score(security_score, coverage_score)
+        scores = {
+            "security_score": security_score,
+            "coverage_score": coverage_score,
+            "overall_score": overall_score,
+        }
+        recommendations_df = build_recommendations(scan_df, analysis["findings_df"], mapping_df, scores)
+    except Exception as exc:  # noqa: BLE001 - surface any analysis failure to the UI
+        st.error(
+            f"Could not analyze scan ({type(exc).__name__}): {exc}. "
+            "Previous dataset kept; check the input source for malformed or missing fields."
+        )
+        return
 
     st.session_state.current_records = records
     st.session_state.current_scan_df = scan_df
