@@ -230,6 +230,7 @@ with st.sidebar:
         result = scanner.scan()
         if result.success:
             set_current_scan(result.records, backend=result.backend, mode="live", source_label=f"Live scan via {result.backend}")
+            st.session_state.last_live_scan_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             st.success(f"{result.message} Captured {len(result.records)} AP records using {result.backend}.")
             if result.warning:
                 st.info(result.warning)
@@ -370,6 +371,36 @@ with overview_tab:
 with scan_tab:
     st.subheader("Scan nearby Wi-Fi access points")
     st.caption("Passive scanning only. No credential capture, packet injection, deauthentication, or exploitation features are included.")
+
+    refresh_col, status_col = st.columns([1, 3])
+    with refresh_col:
+        refresh_clicked = st.button(
+            "🔄 Refresh live scan",
+            use_container_width=True,
+            help="Run a fresh live scan and update this table without leaving the tab.",
+        )
+    with status_col:
+        last_at = st.session_state.get("last_live_scan_at")
+        if last_at:
+            st.caption(f"Last live scan: {last_at}")
+
+    if refresh_clicked:
+        result = scanner.scan()
+        if result.success:
+            set_current_scan(
+                result.records,
+                backend=result.backend,
+                mode="live",
+                source_label=f"Live scan via {result.backend}",
+            )
+            st.session_state.last_live_scan_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            st.success(f"Refreshed: {len(result.records)} APs via {result.backend}.")
+            st.rerun()
+        else:
+            st.error(result.message)
+            attempts_summary = (result.metadata or {}).get("attempts_summary")
+            if attempts_summary:
+                st.caption(f"Tried backends — {attempts_summary}")
 
     if not scan_df.empty:
         scan_filters_left, scan_filters_right = st.columns([1.2, 1])
