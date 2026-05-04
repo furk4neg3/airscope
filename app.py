@@ -582,15 +582,26 @@ with mapping_tab:
                 records_to_save = st.session_state.current_records
 
             if records_to_save:
-                storage.save_mapping_points(x=x_value, y=y_value, point_label=point_label, records=records_to_save, source_snapshot_id=st.session_state.current_snapshot_id)
-                st.session_state.current_mapping_df = active_mapping_df(st.session_state.current_mode)
-                mapping_df = st.session_state.current_mapping_df.copy()
-                coverage_score, coverage_breakdown = calculate_coverage_score(scan_df, mapping_df)
-                st.session_state.current_scores["coverage_score"] = coverage_score
-                st.session_state.current_scores["overall_score"] = calculate_overall_score(st.session_state.current_scores["security_score"], coverage_score)
-                st.session_state.current_score_breakdown["coverage"] = coverage_breakdown
-                st.session_state.current_recommendations_df = build_recommendations(scan_df, findings_df, mapping_df, st.session_state.current_scores)
-                st.success(f"Saved measurement point '{point_label}'.")
+                if st.session_state.current_mode == "demo":
+                    # Demo mode is meant to be a self-contained showcase. Writing
+                    # captured points to the real mapping_points table would leak
+                    # demo data into the user's persistent storage and then show
+                    # up in live mode (where active_mapping_df returns stored
+                    # points). Block the write and tell the user.
+                    st.warning(
+                        "Mapping points are not saved in Demo Mode. "
+                        "Switch to Live Scan to capture real survey data."
+                    )
+                else:
+                    storage.save_mapping_points(x=x_value, y=y_value, point_label=point_label, records=records_to_save, source_snapshot_id=st.session_state.current_snapshot_id)
+                    st.session_state.current_mapping_df = active_mapping_df(st.session_state.current_mode)
+                    mapping_df = st.session_state.current_mapping_df.copy()
+                    coverage_score, coverage_breakdown = calculate_coverage_score(scan_df, mapping_df)
+                    st.session_state.current_scores["coverage_score"] = coverage_score
+                    st.session_state.current_scores["overall_score"] = calculate_overall_score(st.session_state.current_scores["security_score"], coverage_score)
+                    st.session_state.current_score_breakdown["coverage"] = coverage_breakdown
+                    st.session_state.current_recommendations_df = build_recommendations(scan_df, findings_df, mapping_df, st.session_state.current_scores)
+                    st.success(f"Saved measurement point '{point_label}'.")
 
     mapping_df = st.session_state.current_mapping_df.copy()
     if not mapping_df.empty:
