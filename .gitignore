@@ -1,0 +1,31 @@
+# Python bytecode / caches
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Pytest / mypy / coverage caches
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Local SQLite database (runtime data, not source)
+data/wifi_assessment.db
+data/*.db-journal
+
+# Generated reports
+reports/*.md
+reports/*.html
+reports/*.pdf
+!reports/.gitkeep
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
