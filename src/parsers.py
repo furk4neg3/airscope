@@ -77,19 +77,30 @@ def parse_netsh_output(text: str) -> list[APRecord]:
     return records
 
 
+_NMCLI_FIELD_SPLIT = re.compile(r"(?<!\\):")
+
+
+def _split_nmcli_terse_line(line: str) -> list[str]:
+    """Split a nmcli '-t' line on unescaped ':' and unescape '\\:' in fields."""
+    parts = _NMCLI_FIELD_SPLIT.split(line)
+    return [p.replace("\\:", ":") for p in parts]
+
+
 def parse_nmcli_output(text: str) -> list[APRecord]:
     records: list[APRecord] = []
     for raw_line in text.splitlines():
         line = raw_line.strip()
         if not line:
             continue
-        parts = line.split("|")
+        parts = _split_nmcli_terse_line(line)
         if len(parts) < 6:
             continue
         ssid, bssid, channel, freq, signal, security = parts[:6]
         channel_int = parse_channel_value(channel)
-        freq_val = float(freq) if freq.strip().isdigit() else None
-        percent = float(signal) if signal.strip().isdigit() else None
+        freq_match = re.search(r"\d+(?:\.\d+)?", freq)
+        freq_val = float(freq_match.group(0)) if freq_match else None
+        signal_match = re.search(r"\d+(?:\.\d+)?", signal)
+        percent = float(signal_match.group(0)) if signal_match else None
         records.append(
             APRecord(
                 ssid=clean_ssid(ssid),

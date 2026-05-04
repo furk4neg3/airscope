@@ -140,11 +140,12 @@ class WiFiScanner:
         )
 
     def _scan_linux_nmcli(self) -> ScanResult:
+        # Use nmcli's default terse output (':' separator with '\:' escapes).
+        # The '--separator' flag was removed in newer nmcli releases, so relying
+        # on the default keeps this compatible across versions.
         command = [
             "nmcli",
             "-t",
-            "--separator",
-            "|",
             "-f",
             "SSID,BSSID,CHAN,FREQ,SIGNAL,SECURITY",
             "dev",
