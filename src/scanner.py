@@ -143,6 +143,12 @@ class WiFiScanner:
         # Use nmcli's default terse output (':' separator with '\:' escapes).
         # The '--separator' flag was removed in newer nmcli releases, so relying
         # on the default keeps this compatible across versions.
+        #
+        # '--rescan auto' lets NetworkManager decide whether to trigger a fresh
+        # radio scan or return its recent cache. Forcing 'yes' on every call
+        # (including back-to-back captures from the multi-sample mapping flow)
+        # can hit NM's rate-limit and cause 'Scanning not allowed immediately
+        # following previous scan' errors.
         command = [
             "nmcli",
             "-t",
@@ -152,7 +158,7 @@ class WiFiScanner:
             "wifi",
             "list",
             "--rescan",
-            "yes",
+            "auto",
         ]
         ok, stdout, stderr = safe_run(command)
         records = parse_nmcli_output(stdout) if ok else []
