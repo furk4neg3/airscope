@@ -20,7 +20,7 @@ from src.reporting import build_html_report, build_markdown_report, save_report
 from src.scanner import WiFiScanner
 from src.scoring import calculate_coverage_score, calculate_overall_score, calculate_security_score
 from src.storage import StorageManager
-from src.utils import ASSETS_DIR, environment_summary, ensure_directories, pretty_backend_name
+from src.utils import ASSETS_DIR, dbm_to_quality_bucket, environment_summary, ensure_directories, pretty_backend_name
 
 st.set_page_config(
     page_title="Secure Wi-Fi Signal Mapper",
@@ -426,10 +426,39 @@ with scan_tab:
         if suspicious_only:
             filtered = filtered[(filtered["ssid"].isin(suspicious_ssids)) | (filtered["bssid"].isin(suspicious_bssids))]
 
-        st.dataframe(
-            filtered[["ssid", "bssid", "signal_dbm", "signal_percent", "channel", "band", "security", "backend", "timestamp"]],
-            use_container_width=True,
-            hide_index=True,
+        # Color-code signal strength so the user can spot weak / dead APs at a
+        # glance without reading dBm numbers. Buckets and thresholds match the
+        # ones used by the scoring + heatmap modules so the table is consistent
+        # with the rest of the app.
+        bucket_colors = {
+            "excellent": "#1b7f3a",   # deep green
+            "good":      "#3fae5a",   # green
+            "fair":      "#d4a017",   # amber
+            "weak":      "#d97706",   # orange
+            "dead zone": "#b91c1c",   # red
+            "unknown":   "#6b7280",   # gray
+        }
+
+        def _row_signal_style(row: pd.Series) -> list[str]:
+            bucket = dbm_to_quality_bucket(row.get("signal_dbm"), DEFAULT_THRESHOLDS)
+            color = bucket_colors.get(bucket, "")
+            style = f"background-color: {color}; color: white;" if color else ""
+            # Apply color only to the signal columns; leave the rest untouched.
+            return [
+                style if col in ("signal_dbm", "signal_percent") else ""
+                for col in row.index
+            ]
+
+        display_df = filtered[
+            ["ssid", "bssid", "signal_dbm", "signal_percent", "channel", "band", "security", "backend", "timestamp"]
+        ]
+        styled = display_df.style.apply(_row_signal_style, axis=1).format(
+            {"signal_dbm": "{:.0f}", "signal_percent": "{:.0f}"}, na_rep="—"
+        )
+        st.dataframe(styled, use_container_width=True, hide_index=True)
+        st.caption(
+            "Signal colour: "
+            "🟢 excellent / good · 🟡 fair · 🟠 weak · 🔴 dead zone · ⚪ unknown"
         )
     else:
         st.warning("No scan records are loaded yet. Use the sidebar to run a live scan or load demo data.")
