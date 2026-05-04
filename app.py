@@ -248,17 +248,30 @@ with st.sidebar:
 
     if st.button("Save current scan snapshot", use_container_width=True):
         if st.session_state.current_records:
-            name = f"Snapshot {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-            snapshot_id = storage.save_scan_snapshot(
-                snapshot_name=name,
-                records=st.session_state.current_records,
-                backend=st.session_state.current_backend,
-                mode=st.session_state.current_mode,
-                metadata={"source_label": st.session_state.current_source_label},
+            # Fingerprint = (number of records, source label, current snapshot id).
+            # If the user clicks twice in a row without changing the dataset, the
+            # second click would just create an identical row in the snapshot
+            # list, which is confusing. Skip saving in that case and tell them.
+            fingerprint = (
+                len(st.session_state.current_records),
+                st.session_state.current_source_label,
+                st.session_state.get("current_snapshot_id"),
             )
-            storage.save_findings(st.session_state.current_analysis["findings"], context=f"snapshot:{snapshot_id}")
-            st.session_state.selected_snapshot_id = snapshot_id
-            st.success(f"Saved snapshot #{snapshot_id}.")
+            if st.session_state.get("last_saved_fingerprint") == fingerprint:
+                st.info("This dataset is already saved as the most recent snapshot.")
+            else:
+                name = f"Snapshot {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+                snapshot_id = storage.save_scan_snapshot(
+                    snapshot_name=name,
+                    records=st.session_state.current_records,
+                    backend=st.session_state.current_backend,
+                    mode=st.session_state.current_mode,
+                    metadata={"source_label": st.session_state.current_source_label},
+                )
+                storage.save_findings(st.session_state.current_analysis["findings"], context=f"snapshot:{snapshot_id}")
+                st.session_state.selected_snapshot_id = snapshot_id
+                st.session_state.last_saved_fingerprint = fingerprint
+                st.success(f"Saved snapshot #{snapshot_id}.")
 
     snapshots_df = storage.list_snapshots()
     if not snapshots_df.empty:
