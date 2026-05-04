@@ -73,6 +73,7 @@ class WiFiScanner:
 
         last_error = ""
         last_warning = ""
+        attempts: list[tuple[str, str]] = []  # (backend, short reason)
         for backend in backends:
             if backend == "netsh":
                 result = self._scan_windows_netsh()
@@ -94,7 +95,10 @@ class WiFiScanner:
                 return result
             last_error = result.stderr or result.message
             last_warning = result.warning or last_warning
+            reason = (result.stderr or result.message or "no records").strip().splitlines()[0][:160]
+            attempts.append((backend, reason))
 
+        summary = "; ".join(f"{name}: {reason}" for name, reason in attempts) if attempts else ""
         return ScanResult(
             success=False,
             records=[],
@@ -103,6 +107,7 @@ class WiFiScanner:
             message="Live scan could not collect Wi-Fi data with the available backend(s).",
             stderr=last_error,
             warning=last_warning,
+            metadata={"attempts": attempts, "attempts_summary": summary},
         )
 
     def live_scan_capability_notes(self) -> list[str]:

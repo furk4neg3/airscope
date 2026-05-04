@@ -235,7 +235,10 @@ with st.sidebar:
                 st.info(result.warning)
         else:
             st.error(result.message)
-            if result.stderr:
+            attempts_summary = (result.metadata or {}).get("attempts_summary") if hasattr(result, "metadata") else None
+            if attempts_summary:
+                st.caption(f"Tried backends — {attempts_summary}")
+            elif result.stderr:
                 st.caption(result.stderr)
             if scanner.os_name == "darwin":
                 st.info("On recent macOS versions, the app prefers CoreWLAN via PyObjC for full nearby-network RSSI data, then falls back to airport and finally system_profiler. If CoreWLAN metadata is missing, allow Location Services for Terminal / iTerm / Python and restart Streamlit from a new terminal window.")
