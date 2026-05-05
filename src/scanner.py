@@ -343,6 +343,29 @@ class WiFiScanner:
         except Exception:
             return default
 
+    @staticmethod
+    def _corewlan_channel_number(channel_obj: Any) -> int | None:
+        """Return a CoreWLAN channel number across PyObjC/macOS variants.
+
+        On some Macs, CWNetwork.channel() returns a CWChannel object.
+        On your Mac, it can return an integer-like NSNumber directly.
+        This helper supports both.
+        """
+        if channel_obj is None:
+            return None
+
+        channel_number = WiFiScanner._safe_call(channel_obj, "channelNumber")
+        if channel_number is not None:
+            try:
+                return int(channel_number)
+            except (TypeError, ValueError):
+                return None
+
+        try:
+            return int(channel_obj)
+        except (TypeError, ValueError):
+            return None
+
     def _corewlan_networks_to_records(self, networks: Iterable[Any]) -> list[APRecord]:
         records: list[APRecord] = []
         for network in list(networks or []):
@@ -358,11 +381,7 @@ class WiFiScanner:
                 signal_percent = max(0.0, min(100.0, round((signal_dbm + 100) * 2, 1)))
 
             channel_obj = self._safe_call(network, "channel")
-            channel = self._safe_call(channel_obj, "channelNumber")
-            try:
-                channel = int(channel) if channel is not None else None
-            except (TypeError, ValueError):
-                channel = None
+            channel = self._corewlan_channel_number(channel_obj)
 
             band = infer_band(channel)
             security = self._corewlan_security_label(network)
