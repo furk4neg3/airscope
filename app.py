@@ -451,7 +451,19 @@ with scan_tab:
 
         display_df = filtered[
             ["ssid", "bssid", "signal_dbm", "signal_percent", "channel", "band", "security", "backend", "timestamp"]
-        ]
+        ].copy()
+        # Timestamps are stored in UTC (ISO 8601 with 'Z'). Convert to the
+        # machine's local timezone for display so users don't see times that
+        # appear to be hours behind their local clock.
+        if "timestamp" in display_df.columns:
+            ts_local = pd.to_datetime(display_df["timestamp"], utc=True, errors="coerce")
+            try:
+                ts_local = ts_local.dt.tz_convert(datetime.now().astimezone().tzinfo)
+            except (TypeError, AttributeError):
+                pass
+            display_df["timestamp"] = ts_local.dt.strftime("%Y-%m-%d %H:%M:%S").fillna(
+                display_df["timestamp"]
+            )
         styled = display_df.style.apply(_row_signal_style, axis=1).format(
             {"signal_dbm": "{:.0f}", "signal_percent": "{:.0f}"}, na_rep="—"
         )
